@@ -1,0 +1,21 @@
+{
+  "name": "meanwhile",
+  "short_name": "meanwhile",
+  "description": "A gentle break reminder with a to-do nudge",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#021c1e",
+  "theme_color": "#021c1e",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

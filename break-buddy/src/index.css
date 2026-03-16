@@ -1,0 +1,75 @@
+:root {
+  --bg: #f5e6d4; --bg2: #052426; --bg3: #ecc8af; --card: #eddcc8;
+  --border: #d8c4a8; --border2: #b09880;
+  --accent: #c18c5d; --accent-glow: rgba(193,140,93,0.55);
+  --accent2: #a85a4e; --accent2-glow: rgba(168,90,78,0.18);
+  --text: #2e2820; --text2: #7a6050; --text3: #b09880;
+  --r: 10px; --rs: 6px;
+
+  /* Typography groups */
+  --t-title-family:   'Baskerville', 'Baskerville Old Face', 'Libre Baskerville', serif;
+  --t-title-size:     30px;
+  --t-title-weight:   700;
+
+  --t-tab-family:     'Work Sans', sans-serif;
+  --t-tab-size:       15px;
+  --t-tab-weight:     normal;
+
+  --t-timer-family:   'Playfair Display', serif;
+  --t-timer-size:     26px;
+  --t-timer-weight:   normal;
+
+  --t-ring-time-family:  'Playfair Display', serif;
+  --t-ring-time-size:    52px;
+  --t-ring-time-weight:  400;
+
+  --t-ring-sub-family:   'Work Sans', sans-serif;
+  --t-ring-sub-size:     13px;
+  --t-ring-sub-weight:   400;
+
+  --t-task-family:    'Work Sans', sans-serif;
+  --t-task-size:      26px;
+  --t-task-weight:    normal;
+
+  --t-stat-family:    'Playfair Display', serif;
+  --t-stat-size:      28px;
+  --t-stat-weight:    normal;
+
+  --t-body-family:    'Work Sans', sans-serif;
+  --t-body-size:      16px;
+  --t-body-weight:    normal;
+
+  --t-label-family:   'Work Sans', sans-serif;
+  --t-label-size:     14px;
+  --t-label-weight:   normal;
+
+  --t-btn-primary-family:  'Baskerville', 'Baskerville Old Face', 'Libre Baskerville', serif; /* kept serif for primary CTA */
+  --t-btn-primary-size:    17px;
+  --t-btn-primary-weight:  600;
+
+  --t-btn-family:     'Work Sans', sans-serif;
+  --t-btn-size:       14px;
+  --t-btn-weight:     500;
+
+  --t-meta-family:    'Work Sans', sans-serif;
+  --t-meta-size:      14px;
+  --t-meta-weight:    normal;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #323d47;
+  min-height: 100dvh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem;
+  font-family: 'Baskerville', 'Baskerville Old Face', 'Libre Baskerville', 'Times New Roman', serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  width: 100%;
+  max-width: 400px;
+}

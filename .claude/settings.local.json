@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:/Users/yun.ling/Documents/code/in-the-meantime\" && npm create vite@latest break-buddy -- --template react 2>&1)",
+      "Bash(cd \"C:/Users/yun.ling/Documents/code/in-the-meantime/break-buddy\" && npm install 2>&1)",
+      "Bash(cd \"C:/Users/yun.ling/Documents/code/in-the-meantime/break-buddy\" && npm install vite-plugin-pwa 2>&1)"
+    ]
+  }
+}
