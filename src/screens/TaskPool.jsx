@@ -101,19 +101,20 @@ export default function TaskPool({ tasks, setTasks, active }) {
   useEffect(() => {
     if (!adding) return
     const handleClickOutside = (e) => {
-      if (formRef.current && !formRef.current.contains(e.target)) cancel()
+      if (formRef.current && !formRef.current.contains(e.target)) addTask()
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [adding, cancel])
+  }, [adding, addTask])
 
-  const addTask = () => {
-    if (!newName.trim()) return
-    setTasks(t => [...t, { name: newName.trim(), freq: newFreq }])
+  const addTask = useCallback(() => {
+    if (newName.trim()) {
+      setTasks(t => [...t, { name: newName.trim(), freq: newFreq }])
+    }
     setNewName('')
     setNewFreq(3)
     setAdding(false)
-  }
+  }, [newName, newFreq, setTasks])
 
   const updateTask = (i, updated) => {
     setTasks(t => t.map((task, idx) => idx === i ? updated : task))
