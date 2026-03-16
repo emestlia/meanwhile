@@ -46,7 +46,7 @@ export default function App() {
 
       {!showSettings && (
         <>
-          <BreakScreen tasks={tasks} onVictory={handleVictory} active={activeTab === 'break'} settings={settings} />
+          <BreakScreen tasks={tasks} log={log} onVictory={handleVictory} active={activeTab === 'break'} settings={settings} />
           <TaskPool tasks={tasks} setTasks={setTasks} active={activeTab === 'pool'} />
           <Victories log={log} active={activeTab === 'victories'} />
         </>

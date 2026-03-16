@@ -8,9 +8,16 @@ function fmt(s) {
   return `${m}:${sec.toString().padStart(2, '0')}`
 }
 
-function randomTask(tasks) {
+function randomTask(tasks, log) {
   if (!tasks.length) return 'take a moment to rest'
-  return tasks[Math.floor(Math.random() * tasks.length)].name
+  const todayStart = new Date().setHours(0, 0, 0, 0)
+  const todayCounts = {}
+  for (const entry of log) {
+    if (entry.ts >= todayStart) todayCounts[entry.task] = (todayCounts[entry.task] || 0) + 1
+  }
+  const available = tasks.filter(t => (todayCounts[t.name] || 0) < t.freq)
+  if (!available.length) return null
+  return available[Math.floor(Math.random() * available.length)].name
 }
 
 function fireNotification(task) {
@@ -40,37 +47,65 @@ function stopTitleFlash(id) {
   document.title = 'meanwhile'
 }
 
-export default function BreakScreen({ tasks, onVictory, active, settings }) {
+const STORAGE_KEY = 'bb-end-time'
+
+function loadSavedTimer() {
+  const savedEndTime = Number(localStorage.getItem(STORAGE_KEY) || 0)
+  const secsLeft = Math.round((savedEndTime - Date.now()) / 1000)
+  return { savedEndTime, secsLeft }
+}
+
+export default function BreakScreen({ tasks, log, onVictory, active, settings }) {
   const totalSecs = Math.round(settings.intervalMins * 60)
-  const [remaining, setRemaining] = useState(totalSecs)
-  const [running, setRunning] = useState(false)
-  const [mode, setMode] = useState('idle')
+
+  // Compute initial timer state once from localStorage
+  const [init] = useState(() => {
+    const { savedEndTime, secsLeft } = loadSavedTimer()
+    return { savedEndTime, secsLeft }
+  })
+
+  const [remaining, setRemaining] = useState(init.secsLeft > 0 ? init.secsLeft : totalSecs)
+  const [running, setRunning] = useState(init.secsLeft > 0)
+  const [mode, setMode] = useState(init.savedEndTime > 0 && init.secsLeft <= 0 ? 'nudge' : 'idle')
   const [deferred, setDeferred] = useState(false)
-  const [currentTask, setCurrentTask] = useState(() => randomTask(tasks))
+  const [currentTask, setCurrentTask] = useState(() => randomTask(tasks, log))
   const [taskFading, setTaskFading] = useState(false)
   const flashRef = useRef(null)
-  const endTimeRef = useRef(null)
+  const endTimeRef = useRef(init.secsLeft > 0 ? init.savedEndTime : null)
+
+  // Fire nudge immediately if the timer expired while the page was closed
+  useEffect(() => {
+    const { savedEndTime, secsLeft } = loadSavedTimer()
+    if (savedEndTime > 0 && secsLeft <= 0) {
+      localStorage.removeItem(STORAGE_KEY)
+      fireNotification(currentTask)
+      flashRef.current = startTitleFlash()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset timer when interval setting changes
   useEffect(() => {
     setRemaining(settings.intervalMins * 60)
     setRunning(false)
+    localStorage.removeItem(STORAGE_KEY)
   }, [settings.intervalMins])
 
   const fireNudge = useCallback(() => {
-    const task = randomTask(tasks)
+    const task = randomTask(tasks, log)
     setCurrentTask(task)
     setRunning(false)
     setMode('nudge')
     setDeferred(false)
-    fireNotification(task)
+    localStorage.removeItem(STORAGE_KEY)
+    if (task) fireNotification(task)
     flashRef.current = startTitleFlash()
-  }, [tasks])
+  }, [tasks, log])
 
   useEffect(() => {
     if (!running) return
     // Record the wall-clock end time so throttled tabs stay accurate
     endTimeRef.current = Date.now() + remaining * 1000
+    localStorage.setItem(STORAGE_KEY, endTimeRef.current)
     const id = setInterval(() => {
       const secsLeft = Math.round((endTimeRef.current - Date.now()) / 1000)
       if (secsLeft <= 0) {
@@ -84,17 +119,21 @@ export default function BreakScreen({ tasks, onVictory, active, settings }) {
     return () => clearInterval(id)
   }, [running, fireNudge]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const toggleTimer = () => setRunning(r => !r)
+  const toggleTimer = () => {
+    if (running) localStorage.removeItem(STORAGE_KEY)
+    setRunning(r => !r)
+  }
 
   const resetTimer = () => {
     setRunning(false)
     setRemaining(totalSecs)
+    localStorage.removeItem(STORAGE_KEY)
   }
 
   const skipTask = () => {
     setTaskFading(true)
     setTimeout(() => {
-      setCurrentTask(randomTask(tasks))
+      setCurrentTask(randomTask(tasks, log))
       setTaskFading(false)
     }, 200)
   }
@@ -111,6 +150,7 @@ export default function BreakScreen({ tasks, onVictory, active, settings }) {
     setDeferred(false)
     setRemaining(totalSecs)
     setRunning(false)
+    localStorage.removeItem(STORAGE_KEY)
   }
 
   const frac = remaining / totalSecs
@@ -165,17 +205,28 @@ export default function BreakScreen({ tasks, onVictory, active, settings }) {
                 <div className="habit"><div className="habit-label">rest your eyes</div></div>
               </div>
               <hr className="divider" />
-              <div className="nudge-prompt">while you're up</div>
-              <div className={`nudge-task${taskFading ? ' fading' : ''}`}>
-                {currentTask}
-              </div>
-              <div className="nudge-btns">
-                <button className="btn-done" onClick={markDone} title="done">✓</button>
-                <button className="btn-skip" onClick={skipTask} title="give me a different task">⤭</button>
-              </div>
-              <button className="btn-meeting" onClick={() => setDeferred(true)}>
-                i'm in a meeting right now
-              </button>
+              {currentTask === null ? (
+                <>
+                  <div className="nudge-task">no tasks left! rejoice 🎉</div>
+                  <div className="nudge-btns">
+                    <button className="btn-done" onClick={endNudge}>back to timer</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="nudge-prompt">while you're up</div>
+                  <div className={`nudge-task${taskFading ? ' fading' : ''}`}>
+                    {currentTask}
+                  </div>
+                  <div className="nudge-btns">
+                    <button className="btn-done" onClick={markDone} title="done">✓</button>
+                    <button className="btn-skip" onClick={skipTask} title="give me a different task">⤭</button>
+                  </div>
+                  <button className="btn-meeting" onClick={() => setDeferred(true)}>
+                    i'm in a meeting right now
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
