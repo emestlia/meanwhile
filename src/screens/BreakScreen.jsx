@@ -49,6 +49,7 @@ export default function BreakScreen({ tasks, onVictory, active, settings }) {
   const [currentTask, setCurrentTask] = useState(() => randomTask(tasks))
   const [taskFading, setTaskFading] = useState(false)
   const flashRef = useRef(null)
+  const endTimeRef = useRef(null)
 
   // Reset timer when interval setting changes
   useEffect(() => {
@@ -68,18 +69,20 @@ export default function BreakScreen({ tasks, onVictory, active, settings }) {
 
   useEffect(() => {
     if (!running) return
+    // Record the wall-clock end time so throttled tabs stay accurate
+    endTimeRef.current = Date.now() + remaining * 1000
     const id = setInterval(() => {
-      setRemaining(r => {
-        if (r <= 1) {
-          clearInterval(id)
-          fireNudge()
-          return 0
-        }
-        return r - 1
-      })
+      const secsLeft = Math.round((endTimeRef.current - Date.now()) / 1000)
+      if (secsLeft <= 0) {
+        clearInterval(id)
+        setRemaining(0)
+        fireNudge()
+      } else {
+        setRemaining(secsLeft)
+      }
     }, 1000)
     return () => clearInterval(id)
-  }, [running, fireNudge])
+  }, [running, fireNudge]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleTimer = () => setRunning(r => !r)
 
