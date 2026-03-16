@@ -58,20 +58,20 @@ function loadSavedTimer() {
 export default function BreakScreen({ tasks, log, onVictory, active, settings }) {
   const totalSecs = Math.round(settings.intervalMins * 60)
 
-  // Compute initial timer state once from localStorage
-  const [init] = useState(() => {
-    const { savedEndTime, secsLeft } = loadSavedTimer()
-    return { savedEndTime, secsLeft }
+  const [remaining, setRemaining] = useState(() => {
+    const { secsLeft } = loadSavedTimer()
+    return secsLeft > 0 ? secsLeft : Math.round(settings.intervalMins * 60)
   })
-
-  const [remaining, setRemaining] = useState(init.secsLeft > 0 ? init.secsLeft : totalSecs)
-  const [running, setRunning] = useState(init.secsLeft > 0)
-  const [mode, setMode] = useState(init.savedEndTime > 0 && init.secsLeft <= 0 ? 'nudge' : 'idle')
+  const [running, setRunning] = useState(() => loadSavedTimer().secsLeft > 0)
+  const [mode, setMode] = useState(() => {
+    const { savedEndTime, secsLeft } = loadSavedTimer()
+    return savedEndTime > 0 && secsLeft <= 0 ? 'nudge' : 'idle'
+  })
   const [deferred, setDeferred] = useState(false)
   const [currentTask, setCurrentTask] = useState(() => randomTask(tasks, log))
   const [taskFading, setTaskFading] = useState(false)
   const flashRef = useRef(null)
-  const endTimeRef = useRef(init.secsLeft > 0 ? init.savedEndTime : null)
+  const endTimeRef = useRef(null)
 
   // Fire nudge immediately if the timer expired while the page was closed
   useEffect(() => {
@@ -83,8 +83,10 @@ export default function BreakScreen({ tasks, log, onVictory, active, settings })
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reset timer when interval setting changes
+  // Reset timer when interval setting changes (skip on mount to preserve restored state)
+  const mountedRef = useRef(false)
   useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; return }
     setRemaining(settings.intervalMins * 60)
     setRunning(false)
     localStorage.removeItem(STORAGE_KEY)
