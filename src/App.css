@@ -115,6 +115,31 @@
   color: var(--text);
   line-height: 1;
 }
+.idle-time.editable {
+  cursor: pointer;
+}
+.idle-time.editable:hover {
+  color: var(--accent2);
+}
+.duration-input {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--t-ring-time-family);
+  font-size: var(--t-ring-time-size);
+  font-weight: var(--t-ring-time-weight);
+  width: 3ch;
+  text-align: center;
+  outline: none;
+  padding: 0;
+  line-height: 1;
+  -moz-appearance: textfield;
+}
+.duration-input::-webkit-outer-spin-button,
+.duration-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
 .idle-sub {
   font-family: var(--t-ring-sub-family);
   font-size: var(--t-ring-sub-size);

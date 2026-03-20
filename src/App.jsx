@@ -15,7 +15,6 @@ const DEFAULT_TASKS = [
 ]
 
 const DEFAULT_SETTINGS = {
-  intervalMins: 75,
   notifications: Notification.permission,
 }
 
@@ -46,7 +45,7 @@ export default function App() {
 
       {!showSettings && (
         <>
-          <BreakScreen tasks={tasks} log={log} onVictory={handleVictory} active={activeTab === 'break'} settings={settings} />
+          <BreakScreen tasks={tasks} log={log} onVictory={handleVictory} active={activeTab === 'break'} />
           <TaskPool tasks={tasks} setTasks={setTasks} active={activeTab === 'pool'} />
           <Victories log={log} active={activeTab === 'victories'} />
         </>

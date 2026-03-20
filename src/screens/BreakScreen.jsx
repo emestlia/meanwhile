@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 
 const CIRCUMFERENCE = 2 * Math.PI * 45
 
@@ -55,12 +56,13 @@ function loadSavedTimer() {
   return { savedEndTime, secsLeft }
 }
 
-export default function BreakScreen({ tasks, log, onVictory, active, settings }) {
-  const totalSecs = Math.round(settings.intervalMins * 60)
+export default function BreakScreen({ tasks, log, onVictory, active }) {
+  const [intervalMins, setIntervalMins] = useLocalStorage('bb-interval-mins', 75)
+  const totalSecs = Math.round(intervalMins * 60)
 
   const [remaining, setRemaining] = useState(() => {
     const { secsLeft } = loadSavedTimer()
-    return secsLeft > 0 ? secsLeft : Math.round(settings.intervalMins * 60)
+    return secsLeft > 0 ? secsLeft : Math.round(intervalMins * 60)
   })
   const [running, setRunning] = useState(() => loadSavedTimer().secsLeft > 0)
   const [mode, setMode] = useState(() => {
@@ -70,8 +72,11 @@ export default function BreakScreen({ tasks, log, onVictory, active, settings })
   const [deferred, setDeferred] = useState(false)
   const [currentTask, setCurrentTask] = useState(() => randomTask(tasks, log))
   const [taskFading, setTaskFading] = useState(false)
+  const [editingDuration, setEditingDuration] = useState(false)
+  const [draftMins, setDraftMins] = useState('')
   const flashRef = useRef(null)
   const endTimeRef = useRef(null)
+  const durationInputRef = useRef(null)
 
   // Fire nudge immediately if the timer expired while the page was closed
   useEffect(() => {
@@ -82,15 +87,6 @@ export default function BreakScreen({ tasks, log, onVictory, active, settings })
       flashRef.current = startTitleFlash()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Reset timer when interval setting changes (skip on mount to preserve restored state)
-  const mountedRef = useRef(false)
-  useEffect(() => {
-    if (!mountedRef.current) { mountedRef.current = true; return }
-    setRemaining(settings.intervalMins * 60)
-    setRunning(false)
-    localStorage.removeItem(STORAGE_KEY)
-  }, [settings.intervalMins])
 
   const fireNudge = useCallback(() => {
     const task = randomTask(tasks, log)
@@ -130,6 +126,25 @@ export default function BreakScreen({ tasks, log, onVictory, active, settings })
     setRunning(false)
     setRemaining(totalSecs)
     localStorage.removeItem(STORAGE_KEY)
+  }
+
+  const startEditDuration = () => {
+    setDraftMins(String(intervalMins))
+    setEditingDuration(true)
+    setTimeout(() => {
+      durationInputRef.current?.select()
+    }, 0)
+  }
+
+  const confirmDuration = () => {
+    const parsed = parseFloat(draftMins)
+    if (!isNaN(parsed) && parsed >= 1) {
+      const newMins = Math.round(parsed)
+      setIntervalMins(newMins)
+      setRemaining(Math.round(newMins * 60))
+      localStorage.removeItem(STORAGE_KEY)
+    }
+    setEditingDuration(false)
   }
 
   const skipTask = () => {
@@ -174,10 +189,36 @@ export default function BreakScreen({ tasks, log, onVictory, active, settings })
               />
             </svg>
             <div className="ring-inner">
-              <div className="idle-time">{fmt(remaining)}</div>
-              <div className="idle-sub">
-                {running ? 'next break' : remaining < totalSecs ? 'paused' : 'next break'}
-              </div>
+              {editingDuration ? (
+                <>
+                  <input
+                    ref={durationInputRef}
+                    className="duration-input"
+                    type="number"
+                    value={draftMins}
+                    onChange={e => setDraftMins(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') confirmDuration()
+                      if (e.key === 'Escape') setEditingDuration(false)
+                    }}
+                    onBlur={confirmDuration}
+                    min="1"
+                  />
+                  <div className="idle-sub">minutes</div>
+                </>
+              ) : (
+                <>
+                  <div
+                    className={`idle-time${!running ? ' editable' : ''}`}
+                    onClick={!running ? startEditDuration : undefined}
+                  >
+                    {fmt(remaining)}
+                  </div>
+                  <div className="idle-sub">
+                    {running ? 'next break' : remaining < totalSecs ? 'paused' : 'next break'}
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <div className="idle-btns">
